@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -13,7 +13,7 @@ export class UserService {
                 }
             })
             if (!user){
-                throw new BadRequestException("User not found");
+                throw new UnauthorizedException("User not found");
             }
             return user;    
         } catch (error) {

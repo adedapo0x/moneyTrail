@@ -1,12 +1,12 @@
-import { Body, Controller, HttpException, HttpStatus, Post } from '@nestjs/common';
-import { RegisterDTO } from './dto/register.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Body, Controller, HttpException, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { RegisterDTO } from './dto';
+import { LocalAuthGuard} from './guards/local.guard';
 
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) {}
-    @Post()
+    @Post('register')
     async register(@Body() dto: RegisterDTO){
         try {
             return this.authService.register(dto);    
@@ -18,9 +18,9 @@ export class AuthController {
         }
     }
 
-
-    @Post()
+    @UseGuards(LocalAuthGuard)
+    @Post('login')
     login(){
-        "hello sir"
+        
     }
 }

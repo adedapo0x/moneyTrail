@@ -2,10 +2,11 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDTO } from './dto/register.dto';
 import * as argon2 from 'argon2'
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
-    constructor(private prisma: PrismaService){}
+    constructor(private prisma: PrismaService, private userService: UserService){}
 
     async register(dto: RegisterDTO){
         try {
@@ -25,7 +26,22 @@ export class AuthService {
                 }
             })
         } catch (error) {
-            return new BadRequestException('Failed to create user');
+            throw new BadRequestException('Failed to create user');
+        }   
+    }
+
+    async authenticateUser(email: string, password: string){
+        try {
+            const user = await this.userService.getUser(email);
+            const pwMatches = await argon2.verify(user.passwordHash, password);
+
+            if (user && pwMatches){
+                const {passwordHash, ...sanitizedUser} = user;
+                return sanitizedUser;
+            }
+            return null;
+        } catch (error) {
+            throw new UnauthorizedException()
         }
         
     }
