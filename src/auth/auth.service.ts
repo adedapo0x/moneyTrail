@@ -46,8 +46,10 @@ export class AuthService {
             }
             return null;
         } catch (error) {
-            console.log(error)
-            throw new UnauthorizedException('Credentials do not match')
+            if (error instanceof UnauthorizedException){
+                throw new UnauthorizedException("Credentials do not match")
+            }
+            throw new UnauthorizedException('Error occured while logging in')
         }
     }
 

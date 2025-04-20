@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -17,8 +17,10 @@ export class UserService {
             }
             return user;    
         } catch (error) {
-            throw new Error("Failed to get user!", error)
+            if (error instanceof UnauthorizedException){ 
+                throw error
+            }
+            throw new InternalServerErrorException("Failed to get user!")
         }
-        
     }
 }
