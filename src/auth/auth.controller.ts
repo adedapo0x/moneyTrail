@@ -8,15 +8,15 @@ export class AuthController {
     constructor(private authService: AuthService) {}
     @Post('register')
     async register(@Body() dto: RegisterDTO){
-        try {
-            return this.authService.register(dto);    
-        } catch (error) {
-            if (error.message == 'User already exists'){
-                throw new HttpException('User already exists', HttpStatus.CONFLICT)
-            } 
-            throw new HttpException('Failed to create user', HttpStatus.INTERNAL_SERVER_ERROR)
+        const registeredUser = await this.authService.register(dto);    
+        return {
+            message: "User created successfully",
+            user: {
+                username: registeredUser.username
+            }
         }
     }
+    
 
     @UseGuards(LocalAuthGuard)
     @Post('login')

@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDTO } from './dto/register.dto';
 import * as argon2 from 'argon2'
 import { UserService } from 'src/user/user.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -12,13 +13,13 @@ export class AuthService {
         try {
             const existingUser = await this.prisma.user.findUnique({
                 where: {email: dto.email}
-            })
-            
+            })    
             if (existingUser){
-                throw new Error('User already exists')
+                throw new ConflictException('User already exists')
             }
             const hashedPassword = await argon2.hash(dto.password);
-            await this.prisma.user.create({
+
+            return this.prisma.user.create({
                 data: {
                     email: dto.email,
                     username: dto.username,
@@ -26,8 +27,12 @@ export class AuthService {
                 }
             })
         } catch (error) {
-            throw new BadRequestException('Failed to create user');
-        }   
+            if (error instanceof HttpException){
+                throw error;
+            }
+            throw new InternalServerErrorException('Error occured during user registration. Kindly try again')
+        }
+            
     }
 
     async authenticateUser(email: string, password: string){
@@ -41,10 +46,15 @@ export class AuthService {
             }
             return null;
         } catch (error) {
-            throw new UnauthorizedException()
+            console.log(error)
+            throw new UnauthorizedException('Credentials do not match')
         }
-        
     }
+
+    async login(user){
+
+    }
+
 
     
 }

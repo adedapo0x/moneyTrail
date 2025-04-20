@@ -17,7 +17,7 @@ export class UserService {
             }
             return user;    
         } catch (error) {
-            throw new Error("Failed to get user!")
+            throw new Error("Failed to get user!", error)
         }
         
     }
