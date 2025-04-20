@@ -1,4 +1,4 @@
-import { Body, Controller, HttpException, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpException, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDTO } from './dto';
 import { LocalAuthGuard} from './guards/local.guard';
@@ -20,8 +20,9 @@ export class AuthController {
         }
     }
     
- 
+    
     @UseGuards(LocalAuthGuard)
+    @HttpCode(HttpStatus.OK)
     @Post('login')
     login(@GetUser() user: SafeUser, @Res({passthrough: true}) res: Response){
         return this.authService.login(user, res)

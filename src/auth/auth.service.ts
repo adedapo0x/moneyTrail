@@ -65,14 +65,14 @@ export class AuthService {
         const jwtExpiryTime = this.configService.getOrThrow("JWT_ACCESS_TOKEN_EXPIRY_TIME")
         const secret = this.configService.getOrThrow("JWT_ACCESS_TOKEN_SECRET_KEY")
 
-        const jwtToken = this.jwtService.sign(payload, {
+        const accessToken = this.jwtService.sign(payload, {
             secret, 
             expiresIn: jwtExpiryTime
         })
 
         const maxAge = parseInt(ms(jwtExpiryTime));
         
-        res.cookie('Authorization', jwtToken, {
+        res.cookie('Authentication', accessToken, {
             httpOnly: true,
             secure: this.configService.get("NODE_ENV") === 'production',
             maxAge
