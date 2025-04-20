@@ -1,13 +1,20 @@
-import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, HttpException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDTO } from './dto/register.dto';
 import * as argon2 from 'argon2'
+import * as ms from "ms"
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
+import { SafeUser } from './types/safeeUser.type';
+import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { max } from 'class-validator';
 
 @Injectable()
 export class AuthService {
-    constructor(private prisma: PrismaService, private userService: UserService){}
+    constructor(private prisma: PrismaService, private userService: UserService, private configService: ConfigService,
+        private jwtService: JwtService
+    ){}
 
     async register(dto: RegisterDTO){
         try {
@@ -53,10 +60,22 @@ export class AuthService {
         }
     }
 
-    async login(user){
+    async login(user: SafeUser, res: Response){
+        const payload = {username: user.username, sub: user.id}
+        const jwtExpiryTime = this.configService.getOrThrow("JWT_ACCESS_TOKEN_EXPIRY_TIME")
+        const secret = this.configService.getOrThrow("JWT_ACCESS_TOKEN_SECRET_KEY")
 
-    }
+        const jwtToken = this.jwtService.sign(payload, {
+            secret, 
+            expiresIn: jwtExpiryTime
+        })
 
-
-    
+        const maxAge = parseInt(ms(jwtExpiryTime));
+        
+        res.cookie('Authorization', jwtToken, {
+            httpOnly: true,
+            secure: this.configService.get("NODE_ENV") === 'production',
+            maxAge
+        })
+    }    
 }
