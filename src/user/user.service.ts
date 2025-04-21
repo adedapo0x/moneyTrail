@@ -39,4 +39,5 @@ export class UserService {
         const {passwordHash, ...loggedInUser} = currentUser;
         return loggedInUser;
     }
+
 }

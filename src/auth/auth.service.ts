@@ -62,20 +62,47 @@ export class AuthService {
 
     async login(user: SafeUser, res: Response){
         const payload = {username: user.username, sub: user.id}
-        const jwtExpiryTime = this.configService.getOrThrow("JWT_ACCESS_TOKEN_EXPIRY_TIME")
-        const secret = this.configService.getOrThrow("JWT_ACCESS_TOKEN_SECRET_KEY")
+
+        const accessTokenExpiryTime = this.configService.getOrThrow("JWT_ACCESS_TOKEN_EXPIRY_TIME")
+        const accessTokenSecret = this.configService.getOrThrow("JWT_ACCESS_TOKEN_SECRET_KEY")
+
+        const refreshTokenSecret = this.configService.getOrThrow("JWT_REFRESH_TOKEN_SECRET_KEY")
+        const refreshTokenExpiryTime = this.configService.getOrThrow("JWT_REFRESH_TOKEN_EXPIRY_TIME")
 
         const accessToken = this.jwtService.sign(payload, {
-            secret, 
-            expiresIn: jwtExpiryTime
+            secret: accessTokenSecret, 
+            expiresIn: accessTokenExpiryTime
         })
 
-        const maxAge = parseInt(ms(jwtExpiryTime));
+        const refreshToken = this.jwtService.sign(payload, {
+            secret: refreshTokenSecret,
+            expiresIn: refreshTokenExpiryTime
+        })
+
+        const hashRefreshToken = await argon2.hash(refreshToken);
+
+        await this.prisma.user.update({
+            where: {
+                id: user.id
+            },
+            data: {
+                refreshToken: hashRefreshToken
+            }
+        })
+
+        const maxAgeForAccessCookie = parseInt(ms(accessTokenExpiryTime));
+        const maxAgeForRefreshCookie = parseInt(ms(refreshTokenExpiryTime));
         
         res.cookie('Authentication', accessToken, {
             httpOnly: true,
             secure: this.configService.get("NODE_ENV") === 'production',
-            maxAge
+            maxAge: maxAgeForAccessCookie
+        })
+
+        res.cookie('Refresh-Auth', refreshToken, {
+            httpOnly: true,
+            secure: this.configService.get("NODE_ENV") === "production",
+            maxAge: maxAgeForRefreshCookie
         })
     }    
 }
