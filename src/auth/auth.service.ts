@@ -48,7 +48,7 @@ export class AuthService {
             const pwMatches = await argon2.verify(user.passwordHash, password);
 
             if (user && pwMatches){
-                const {passwordHash, ...sanitizedUser} = user;
+                const {passwordHash, email, ...sanitizedUser} = user;
                 return sanitizedUser;
             }
             return null;

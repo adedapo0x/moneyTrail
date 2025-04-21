@@ -24,7 +24,10 @@ export class AuthController {
     @UseGuards(LocalAuthGuard)
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    login(@GetUser() user: SafeUser, @Res({passthrough: true}) res: Response){
-        return this.authService.login(user, res)
+    async login(@GetUser() user: SafeUser, @Res({passthrough: true}) res: Response){
+        await this.authService.login(user, res)
+        return {
+            message: "Login successful"
+        }
     }
 }

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { SafeUser } from 'src/auth/types/safeeUser.type';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -22,5 +23,20 @@ export class UserService {
             }
             throw new InternalServerErrorException("Failed to get user!")
         }
+    }
+
+    async getLoggedInUser(user: SafeUser){
+        const userId = user.id;
+        const currentUser = await this.prisma.user.findFirst({
+            where: {
+                id: userId
+            }
+        })
+
+        if (!currentUser){
+            throw new UnauthorizedException()
+        }
+        const {passwordHash, ...loggedInUser} = currentUser;
+        return loggedInUser;
     }
 }
