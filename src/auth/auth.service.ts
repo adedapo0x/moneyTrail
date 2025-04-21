@@ -49,7 +49,7 @@ export class AuthService {
 
             if (user && pwMatches){
                 return {
-                    userId: user.id,
+                    id: user.id,
                     username: user.username
                 };
             }
@@ -82,6 +82,7 @@ export class AuthService {
         })
 
         const hashRefreshToken = await argon2.hash(refreshToken);
+        console.log(user)
 
         await this.prisma.user.update({
             where: {
@@ -110,6 +111,7 @@ export class AuthService {
 
     async verifyUserRefreshToken(refreshToken, userId){
         try {
+            console.log("BBB")
             const user = await this.prisma.user.findFirst({
                 where: {
                     id: userId
@@ -135,5 +137,16 @@ export class AuthService {
             throw new InternalServerErrorException("An error occured while trying to verify refresh token")
         }
         
+    }
+
+    async logout(user: SafeUser){
+        const loggedInUser = await this.prisma.user.update({
+            where: {
+                id: user.id
+            }, 
+            data: {
+                refreshToken: null
+            }
+        })
     }
 }

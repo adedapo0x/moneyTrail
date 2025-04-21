@@ -5,6 +5,7 @@ import { LocalAuthGuard} from './guards/local.guard';
 import { GetUser } from './decorators/getUser.decorator';
 import { SafeUser } from './types/safeeUser.type';
 import { Response } from 'express';
+import { JwtRefreshAuthGuard } from './guards';
 
 @Controller('auth')
 export class AuthController {
@@ -29,5 +30,19 @@ export class AuthController {
         return {
             message: "Login successful"
         }
+    }
+
+    @UseGuards(JwtRefreshAuthGuard)
+    @Post("refresh")
+    async refresh(@GetUser() user: SafeUser, @Res({passthrough: true}) res: Response){
+        await this.authService.login(user, res)
+        return {
+            message: "Login successful"
+        }
+    }
+
+    @Post("logout")
+    async logout(@GetUser() user: SafeUser){
+        await this.authService.logout(user);
     }
 }
