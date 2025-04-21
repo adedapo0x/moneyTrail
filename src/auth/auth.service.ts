@@ -1,4 +1,4 @@
-import { ConflictException, HttpException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDTO } from './dto/register.dto';
 import * as argon2 from 'argon2'
@@ -48,15 +48,17 @@ export class AuthService {
             const pwMatches = await argon2.verify(user.passwordHash, password);
 
             if (user && pwMatches){
-                const {passwordHash, email, ...sanitizedUser} = user;
-                return sanitizedUser;
+                return {
+                    userId: user.id,
+                    username: user.username
+                };
             }
             return null;
         } catch (error) {
             if (error instanceof UnauthorizedException){
                 throw new UnauthorizedException("Credentials do not match")
             }
-            throw new UnauthorizedException('Error occured while logging in')
+            throw new BadRequestException('Error occured while logging in')
         }
     }
 
@@ -99,10 +101,39 @@ export class AuthService {
             maxAge: maxAgeForAccessCookie
         })
 
-        res.cookie('Refresh-Auth', refreshToken, {
+        res.cookie('RefreshAuth', refreshToken, {
             httpOnly: true,
             secure: this.configService.get("NODE_ENV") === "production",
             maxAge: maxAgeForRefreshCookie
         })
     }    
+
+    async verifyUserRefreshToken(refreshToken, userId){
+        try {
+            const user = await this.prisma.user.findFirst({
+                where: {
+                    id: userId
+                }
+            })
+            if (!user){
+                throw new UnauthorizedException();
+            }
+            if (!user.refreshToken){
+                throw new UnauthorizedException("No refresh token stored for user")
+            }
+            const authenticated = await argon2.verify(user.refreshToken, refreshToken);
+            if (!authenticated){
+                throw new UnauthorizedException("Refresh token is not valid")
+            }
+            return {
+                id: user.id, username: user.username
+            }
+        } catch (error) {
+            if (error instanceof UnauthorizedException){
+                throw error
+            } else
+            throw new InternalServerErrorException("An error occured while trying to verify refresh token")
+        }
+        
+    }
 }
