@@ -29,7 +29,7 @@ model Expense {
   name String 
   description String? 
   category String
-  amount String
+  amount Float
 
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz

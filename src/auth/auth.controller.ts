@@ -41,6 +41,7 @@ export class AuthController {
         }
     }
 
+    @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
     @Post("logout")
     async logout(@GetUser('id') userID: string){
