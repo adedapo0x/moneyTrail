@@ -82,7 +82,6 @@ export class AuthService {
         })
 
         const hashRefreshToken = await argon2.hash(refreshToken);
-        console.log(user)
 
         await this.prisma.user.update({
             where: {
@@ -111,7 +110,6 @@ export class AuthService {
 
     async verifyUserRefreshToken(refreshToken, userId){
         try {
-            console.log("BBB")
             const user = await this.prisma.user.findFirst({
                 where: {
                     id: userId
@@ -139,10 +137,10 @@ export class AuthService {
         
     }
 
-    async logout(user: SafeUser){
-        const loggedInUser = await this.prisma.user.update({
+    async logout(userID: string){
+        await this.prisma.user.update({
             where: {
-                id: user.id
+                id: userID
             }, 
             data: {
                 refreshToken: null

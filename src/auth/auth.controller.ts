@@ -5,7 +5,7 @@ import { LocalAuthGuard} from './guards/local.guard';
 import { GetUser } from './decorators/getUser.decorator';
 import { SafeUser } from './types/safeeUser.type';
 import { Response } from 'express';
-import { JwtRefreshAuthGuard } from './guards';
+import { JwtAuthGuard, JwtRefreshAuthGuard } from './guards';
 
 @Controller('auth')
 export class AuthController {
@@ -41,8 +41,10 @@ export class AuthController {
         }
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post("logout")
-    async logout(@GetUser() user: SafeUser){
-        await this.authService.logout(user);
+    async logout(@GetUser('id') userID: string){
+        await this.authService.logout(userID);
+        return { message: "Logout successful"}
     }
 }
