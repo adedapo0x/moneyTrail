@@ -34,6 +34,8 @@ model Expense {
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
 
+  isDeleted Boolean @default(false)
+
   userID String
   user User @relation(fields: [userID], references: [id], onDelete: Cascade)
   

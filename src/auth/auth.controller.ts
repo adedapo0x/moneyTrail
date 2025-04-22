@@ -40,9 +40,9 @@ export class AuthController {
             message: "Login successful"
         }
     }
-
-    @HttpCode(HttpStatus.OK)
+    
     @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
     @Post("logout")
     async logout(@GetUser('id') userID: string){
         await this.authService.logout(userID);

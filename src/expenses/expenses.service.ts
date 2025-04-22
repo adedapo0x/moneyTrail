@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AddExpenseDTO } from './dto';
 import { use } from 'passport';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 
 @Injectable()
 export class ExpensesService {
@@ -15,4 +16,23 @@ export class ExpensesService {
             }
         })   
     }
+
+    async deleteExpense(userID: string, expenseID: string){
+        const expense = await this.prisma.expense.findFirst({
+            where: { id: expenseID}
+        })
+        if (!expense){
+            throw new NotFoundException("Expense not found")
+        }
+        if (expense.userID !== userID){
+            throw new UnauthorizedException("You are not authorized to perform this operation")
+        }
+
+        await this.prisma.expense.update({
+            where: { id: expenseID },
+            data: { isDeleted: true }
+        })
+    }
+
+    
 }

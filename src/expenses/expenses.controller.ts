@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import { AddExpenseDTO } from './dto';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
@@ -8,8 +8,9 @@ import { JwtAuthGuard } from 'src/auth/guards';
 export class ExpensesController {
     constructor(private expenseService: ExpensesService){}
 
-    @Post("create")
+    
     @UseGuards(JwtAuthGuard)
+    @Post()
     async addExpense(@GetUser('id') userID: string, @Body() expense: AddExpenseDTO){
         const newExpense = await this.expenseService.addExpense(userID, expense);
         return {
@@ -18,5 +19,19 @@ export class ExpensesController {
         }
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id')
+    async deleteExpense(@GetUser('id') userID: string, @Param('id') expenseID: string){
+        await this.expenseService.deleteExpense(userID, expenseID);
+        return {
+            message: "Expense successfully deleted"
+        }
+    }
+
     
+    @UseGuards(JwtAuthGuard)
+    @Get()
+    async getExpenses(@GetUser('id') userID: string){
+        await this.expenseService.getExpenses(userID);
+    }
 }
