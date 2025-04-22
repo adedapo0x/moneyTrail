@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
-import { AddExpenseDTO } from './dto';
+import { AddExpenseDTO, UpdateExpenseDTO } from './dto';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { JwtAuthGuard } from 'src/auth/guards';
 
@@ -37,6 +37,12 @@ export class ExpensesController {
 
 
     @UseGuards(JwtAuthGuard)
-    @Patch()
-    async updateExpense(@Body() updateBody, expenseID: string, )
+    @Patch(':id')
+    async updateExpense(@GetUser('id') userID: string, @Body() updateBody: UpdateExpenseDTO, @Param('id') expenseID: string){
+        const updatedExpense = await this.expenseService.updateExpense(userID, updateBody, expenseID);
+        return {
+            "message": "Expense has been updated successfully",
+            updatedExpense
+        }
+    }
 }
