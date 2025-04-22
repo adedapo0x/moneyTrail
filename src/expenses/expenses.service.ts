@@ -34,5 +34,15 @@ export class ExpensesService {
         })
     }
 
+
+    async getExpenses(userID: string){
+        return this.prisma.expense.findMany({
+            where: {
+                userID,
+                isDeleted: false
+            }
+        })
+    }
+    
     
 }

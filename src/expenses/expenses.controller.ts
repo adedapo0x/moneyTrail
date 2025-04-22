@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import { AddExpenseDTO } from './dto';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
@@ -32,6 +32,11 @@ export class ExpensesController {
     @UseGuards(JwtAuthGuard)
     @Get()
     async getExpenses(@GetUser('id') userID: string){
-        await this.expenseService.getExpenses(userID);
+        return this.expenseService.getExpenses(userID);
     }
+
+
+    @UseGuards(JwtAuthGuard)
+    @Patch()
+    async updateExpense(@Body() updateBody, expenseID: string, )
 }
