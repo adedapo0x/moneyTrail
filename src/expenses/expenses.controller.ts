@@ -35,6 +35,11 @@ export class ExpensesController {
         return this.expenseService.getExpenses(userID);
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Get()
+    async getExpensesFiltered(@GetUser('id') userID: string, ){
+        
+    }
 
     @UseGuards(JwtAuthGuard)
     @Patch(':id')
