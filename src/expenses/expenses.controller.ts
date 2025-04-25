@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
-import { AddExpenseDTO, UpdateExpenseDTO } from './dto';
+import { AddExpenseDTO, PaginateQueryDTO, UpdateExpenseDTO } from './dto';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { JwtAuthGuard } from 'src/auth/guards';
 
@@ -31,15 +31,10 @@ export class ExpensesController {
     
     @UseGuards(JwtAuthGuard)
     @Get()
-    async getExpenses(@GetUser('id') userID: string){
-        return this.expenseService.getExpenses(userID);
+    async getExpenses(@GetUser('id') userID: string, @Query() paginationDTO: PaginateQueryDTO){
+        return this.expenseService.getExpenses(userID, paginationDTO);
     }
 
-    @UseGuards(JwtAuthGuard)
-    @Get()
-    async getExpensesFiltered(@GetUser('id') userID: string, ){
-        
-    }
 
     @UseGuards(JwtAuthGuard)
     @Patch(':id')

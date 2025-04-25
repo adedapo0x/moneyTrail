@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AddExpenseDTO, UpdateExpenseDTO } from './dto';
+import { AddExpenseDTO, PaginateQueryDTO, UpdateExpenseDTO } from './dto';
 import { use } from 'passport';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 
@@ -35,13 +35,34 @@ export class ExpensesService {
     }
 
 
-    async getExpenses(userID: string){
-        return this.prisma.expense.findMany({
-            where: {
-                userID,
-                isDeleted: false
+    async getExpenses(userID: string, paginationDTO: PaginateQueryDTO){
+        const {page = 1, limit = 10 } = paginationDTO;
+        const skip = (page - 1) * limit
+
+        const [expenses, total] = await Promise.all([
+            this.prisma.expense.findMany({
+                where: {userID, isDeleted: false },
+                skip,
+                take: limit,
+                orderBy: { createdAt: "desc" }
+            }),
+            this.prisma.expense.count({
+                where: {userID, isDeleted: false}
+            })
+        ])
+
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+            data: expenses,
+            meta: {
+                currentPage: page,
+                totalPages,
+                totalItems: total,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
             }
-        })
+        }
     }
     
 
