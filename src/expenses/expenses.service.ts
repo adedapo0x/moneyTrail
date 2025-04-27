@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AddExpenseDTO, PaginateQueryDTO, UpdateExpenseDTO } from './dto';
-import { use } from 'passport';
-import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
+import { AddExpenseDTO, ExpenseTimelineFilter, GetExpenseDTO, UpdateExpenseDTO } from './dto';
+import { subDays, subMonths } from "date-fns"
+import { throwError } from 'rxjs';
+
 
 @Injectable()
 export class ExpensesService {
@@ -35,16 +36,51 @@ export class ExpensesService {
     }
 
 
-    async getExpenses(userID: string, paginationDTO: PaginateQueryDTO){
-        const {page = 1, limit = 10 } = paginationDTO;
+    async getExpenses(userID: string, getQueryDTO: GetExpenseDTO){
+        const {filter, startDate, endDate , page = 1, limit = 10 } = getQueryDTO;
         const skip = (page - 1) * limit
+
+        let computedStartDate: Date | undefined;
+        let computedEndDate: Date | undefined;
+
+        const now = new Date()
+
+        switch (filter) {
+            case ExpenseTimelineFilter.PAST_WEEK:
+                computedStartDate = subDays(now, 7);
+                computedEndDate = now;
+                break;
+            case ExpenseTimelineFilter.PAST_MONTH:
+                computedStartDate = subDays(now, 30)
+                computedEndDate = now
+                break
+            case ExpenseTimelineFilter.LAST_3_MONTHS:
+                computedStartDate = subMonths(now, 3)
+                computedEndDate = now
+                break
+            case ExpenseTimelineFilter.LAST_6_MONTHS:
+                computedStartDate = subMonths(now, 6)
+                computedEndDate = now
+                break
+            case ExpenseTimelineFilter.CUSTOM:
+                if (!startDate || !endDate)
+                    throw new BadRequestException("Start and end date must be provided for custom filters");
+                computedStartDate = new Date(startDate);
+                computedEndDate = new Date(endDate)
+                if (computedStartDate > computedEndDate){
+                    throw new BadRequestException("Start date must be before end date")
+                }
+                break
+            default:
+                throw new BadRequestException("Invalid filter");
+        }
 
         const [expenses, total] = await Promise.all([
             this.prisma.expense.findMany({
                 where: {userID, isDeleted: false },
                 skip,
                 take: limit,
-                orderBy: { createdAt: "desc" }
+                orderBy: { updatedAt: "desc" }
             }),
             this.prisma.expense.count({
                 where: {userID, isDeleted: false}
