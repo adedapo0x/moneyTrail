@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Min } from "class-validator";
 
 export class AddExpenseDTO {
     @IsString()
@@ -17,5 +17,6 @@ export class AddExpenseDTO {
     @IsNumber()
     @IsNotEmpty()
     @IsPositive()
+    @Min(5, {message: "Expense amount cannot be less than 5 naira"})
     amount: number;
 }

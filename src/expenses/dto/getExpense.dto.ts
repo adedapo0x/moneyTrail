@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDateString, IsEnum, IsInt, IsOptional, IsPositive, Min } from "class-validator";
+import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, Min } from "class-validator";
 
 export enum ExpenseTimelineFilter {
     PAST_WEEK = "past_week",
@@ -21,6 +21,15 @@ export class GetExpenseDTO {
     @IsOptional()
     @IsDateString()
     endDate?: string;
+
+    @IsOptional()
+    @Type(() => Number)
+    @Min(5, {message: "Expense cannot be lesser than 5 naira"})
+    minAmount: number = 5;
+
+    @IsOptional()
+    @Type(() => Number)
+    maxAmount: number
  
     @IsOptional()
     @Type(() => Number)

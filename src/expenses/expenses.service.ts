@@ -67,17 +67,39 @@ export class ExpensesService {
                     throw new BadRequestException("Start and end date must be provided for custom filters");
                 computedStartDate = new Date(startDate);
                 computedEndDate = new Date(endDate)
+
+                // ensure that end date covers up until just before the next day
+                computedEndDate.setHours(23, 59, 59, 999);
+
                 if (computedStartDate > computedEndDate){
                     throw new BadRequestException("Start date must be before end date")
                 }
+                break
+            case undefined:
+                // No filtering included in query
                 break
             default:
                 throw new BadRequestException("Invalid filter");
         }
 
+        // build the whereClause to be used in DB query
+        const baseWhereClause = {
+            userID,
+            isDeleted: false,
+        }
+
+        // if date filters are valid and available, add to where clause if not just use baseWhereClause
+        const whereClause = (computedStartDate && computedEndDate) ? {
+            ...baseWhereClause,
+            expenseDate: {
+                gte: computedStartDate,
+                lte: computedEndDate
+            }
+        } : baseWhereClause
+
         const [expenses, total] = await Promise.all([
             this.prisma.expense.findMany({
-                where: {userID, isDeleted: false },
+                where: whereClause,
                 skip,
                 take: limit,
                 orderBy: { updatedAt: "desc" }
