@@ -21,5 +21,4 @@ export class UpdateExpenseDTO {
     @IsOptional()
     @IsPositive()
     amount?: number;
-
 }

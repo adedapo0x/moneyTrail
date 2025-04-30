@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException, UnauthorizedExcepti
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AddExpenseDTO, ExpenseTimelineFilter, GetExpenseDTO, UpdateExpenseDTO } from './dto';
 import { subDays, subMonths } from "date-fns"
-import { throwError } from 'rxjs';
+import { GetQueryInterface } from './interface/get-query.interface';
 
 
 @Injectable()
@@ -37,8 +37,16 @@ export class ExpensesService {
 
 
     async getExpenses(userID: string, getQueryDTO: GetExpenseDTO){
-        const {filter, startDate, endDate , page = 1, limit = 10 } = getQueryDTO;
+        const {filter, startDate, endDate , page = 1, limit = 10, minAmount , maxAmount, sortBy} = getQueryDTO;
         const skip = (page - 1) * limit
+
+        if (minAmount && maxAmount && minAmount > maxAmount){
+            throw new BadRequestException("minAmount cannot be greater than maxAmount");
+        }
+
+        if (filter !== ExpenseTimelineFilter.CUSTOM && (startDate || endDate)){
+            throw new BadRequestException("Filter must be set to custom to use start or end date filters");
+        }
 
         let computedStartDate: Date | undefined;
         let computedEndDate: Date | undefined;
@@ -82,30 +90,46 @@ export class ExpensesService {
                 throw new BadRequestException("Invalid filter");
         }
 
+
         // build the whereClause to be used in DB query
-        const baseWhereClause = {
+        const whereClause: GetQueryInterface = {
             userID,
             isDeleted: false,
         }
 
-        // if date filters are valid and available, add to where clause if not just use baseWhereClause
-        const whereClause = (computedStartDate && computedEndDate) ? {
-            ...baseWhereClause,
-            expenseDate: {
+        // if date filters are valid and available, add to where clause
+        if (computedStartDate && computedEndDate){
+            whereClause.expenseDate = {
                 gte: computedStartDate,
                 lte: computedEndDate
+             } 
+        } 
+
+        // If sorting by amount/cost is included
+        if (minAmount || maxAmount){
+            whereClause.amount = {
+                ...(minAmount && { gte: minAmount}),
+                ...(maxAmount && { lte: maxAmount})
             }
-        } : baseWhereClause
+        }
+
+        const sortFieldMap = {
+            'date-created': 'createdAt',
+            'date-updated': 'updatedAt',
+            'expense-date': 'expenseDate'
+        }
+
+        const sortField = sortBy ? sortFieldMap[sortBy?.toLowerCase()] : "expenseDate"
 
         const [expenses, total] = await Promise.all([
             this.prisma.expense.findMany({
                 where: whereClause,
                 skip,
                 take: limit,
-                orderBy: { updatedAt: "desc" }
+                orderBy: { [sortField]: "desc"}
             }),
             this.prisma.expense.count({
-                where: {userID, isDeleted: false}
+                where: whereClause
             })
         ])
 
